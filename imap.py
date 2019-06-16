@@ -1,4 +1,6 @@
-import email, getpass, imaplib, os, time, threading, configparser, string
+import email, getpass, imaplib, os, time, threading, configparser, string, smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 ########################################################################################################################
@@ -19,8 +21,6 @@ import email, getpass, imaplib, os, time, threading, configparser, string
 # http://web.archive.org/web/20131017130434/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#
 #                                                                                                                      #
 ########################################################################################################################
-    
-
 
  # user data
 userConfig = {
@@ -28,6 +28,45 @@ userConfig = {
     "database.password": ""}
 
 run = True #stop the daemon in False
+
+ # send message function
+def sendMessage():
+	# create message object instance
+	msg = MIMEMultipart()
+ 
+	message = "Thank you"
+ 
+	loadConfig("config.ini")
+
+	# setup the parameters of the message
+	password = userConfig["database.password"]
+	msg['From'] = userConfig["database.user"]
+
+	if (msg['From'] == "" or password == ""):
+		print("user or password empty")
+		exit()
+
+	msg['To'] = "berbesidaniel@gmail.com" # get address 
+	msg['Subject'] = "Esto es el subject"
+ 
+	# add in the message body
+	msg.attach(MIMEText(message, 'plain'))
+ 
+	#create server
+	server = smtplib.SMTP('smtp.gmail.com: 587')
+ 
+	server.starttls()
+ 
+	# Login Credentials for sending the mail
+	server.login(msg['From'], password)
+ 
+ 
+	# send the message via the server.
+	server.sendmail(msg['From'], msg['To'], msg.as_string())
+ 
+	server.quit()
+ 
+	print ("successfully sent email to %s:" % (msg['To']))
 
 
  # load userConfig
@@ -46,7 +85,6 @@ def loadConfig(file):
 
 
 def analizerMail():
-
 
     loadConfig("config.ini")
     # get user from userConfig
@@ -146,6 +184,11 @@ def analizerMail():
 
 
 #####################################################   MAIN  #############################################
+
+
+sendMessage()
+
+exit()
 
 try:
     
