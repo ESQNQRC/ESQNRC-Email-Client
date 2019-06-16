@@ -33,9 +33,8 @@ run = True #stop the daemon in False
 def sendMessage():
 	# create message object instance
 	msg = MIMEMultipart()
- 
-	message = "Thank you"
- 
+
+	# get user config
 	loadConfig("config.ini")
 
 	# setup the parameters of the message
@@ -46,8 +45,21 @@ def sendMessage():
 		print("user or password empty")
 		exit()
 
-	msg['To'] = "berbesidaniel@gmail.com" # get address 
-	msg['Subject'] = "Esto es el subject"
+	destin = input("\nInsert destination (use ',' to separate more destinations): ").split(',')
+
+	chain = ""
+
+	for i in range(0, len(destin)):
+		destin[i] = '<'+destin[i].strip()+'>'
+		chain = chain+destin[i]
+		if i+1 < len(destin):
+			chain = chain+','
+
+	msg['To'] = chain
+
+	msg['Subject'] = input("\nInsert subject: ")
+ 
+	message = input("\nInsert message: ")
  
 	# add in the message body
 	msg.attach(MIMEText(message, 'plain'))
@@ -60,13 +72,12 @@ def sendMessage():
 	# Login Credentials for sending the mail
 	server.login(msg['From'], password)
  
- 
 	# send the message via the server.
 	server.sendmail(msg['From'], msg['To'], msg.as_string())
  
 	server.quit()
  
-	print ("successfully sent email to %s:" % (msg['To']))
+	print ("successfully sent email to %s" % (msg['To']))
 
 
  # load userConfig
