@@ -1,4 +1,4 @@
-import email, getpass, imaplib, os, time, threading, configparser, string, sys
+import email, getpass, imaplib, os, time, threading, configparser, string
 
 
 ########################################################################################################################
