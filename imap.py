@@ -1,6 +1,8 @@
 import email, getpass, imaplib, os, time, threading, configparser, string, smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 
 ########################################################################################################################
@@ -19,6 +21,9 @@ from email.mime.text import MIMEText
 # https://codehandbook.org/how-to-read-email-from-gmail-using-python/                                                  #
 # https://gist.github.com/robulouski/7441883                                                                           #
 # http://web.archive.org/web/20131017130434/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#
+# https://gist.github.com/2624789/d42aaa12bf3a36356342                                                                 #                                  
+# https://docs.python.org/2/library/email.mime.html                                                                    #
+# https://code.tutsplus.com/es/tutorials/sending-emails-in-python-with-smtp--cms-29975                                 #
 #                                                                                                                      #
 ########################################################################################################################
 
@@ -45,28 +50,45 @@ def sendMessage():
 		print("user or password empty")
 		exit()
 
+	# destination
 	destin = input("\nInsert destination (use ',' to separate more destinations): ").split(',')
 
 	chain = ""
 
+	# for more destination
 	for i in range(0, len(destin)):
-		destin[i] = '<'+destin[i].strip()+'>'
+		destin[i] = destin[i].strip()
 		chain = chain+destin[i]
 		if i+1 < len(destin):
 			chain = chain+','
 
 	msg['To'] = chain
 
+	print(msg['To'])
+
 	msg['Subject'] = input("\nInsert subject: ")
  
 	message = input("\nInsert message: ")
- 
+
 	# add in the message body
 	msg.attach(MIMEText(message, 'plain'))
  
-	#create server
-	server = smtplib.SMTP('smtp.gmail.com: 587')
+	file_name = input("\nInsert file name (leave blank if you will not attach): ")
+
+	# attach file
+	if file_name != "":
+		file_address = input("\nInsert file address: ")
+		file = open(file_address, 'rb')
+		file_MIME = MIMEBase('application', 'octet-stream')
+		file_MIME.set_payload((file).read())
+		encoders.encode_base64(file_MIME)
+		file_MIME.add_header('Content-Disposition', "attachment; filename= %s" % file_name)
+		msg.attach(file_MIME)
  
+	# create server
+	server = smtplib.SMTP('smtp.gmail.com: 587')
+ 	
+ 	# encrypt the connection
 	server.starttls()
  
 	# Login Credentials for sending the mail
@@ -77,7 +99,7 @@ def sendMessage():
  
 	server.quit()
  
-	print ("successfully sent email to %s" % (msg['To']))
+	print ("\nsuccessfully sent email to %s" % (msg['To']))
 
 
  # load userConfig
