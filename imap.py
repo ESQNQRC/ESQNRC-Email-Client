@@ -22,74 +22,87 @@ userConfig = {
 
 run = True #stop the daemon in False
 
+
+
+
+###########################
  # send message function
 def sendMessage():
-	# create message object instance
-	msg = MIMEMultipart()
 
-	# get user config
-	loadConfig("config.ini")
+    toDestiny = input ("Enter TO (separate with ',' if more than one destinatary): ").split(",")
+    subject = input ("Enter a Subject: ")
+    body = input ("Enter a body message: ")
+    filesToSend = input ("Enter path of files to attach if any (separete with ',' leave in blank if no files to attach): ").split(",")
 
-	# setup the parameters of the message
-	password = userConfig["database.password"]
-	msg['From'] = userConfig["database.user"]
 
-	if (msg['From'] == "" or password == ""):
-		print("user or password empty")
-		exit()
+    # create message object instance
+    msgMail = MIMEMultipart()
 
-	# destination
-	destin = input("\nInsert destination (use ',' to separate more destinations): ").split(',')
+### Section to set up the data ###
 
-	chain = ""
+    # setup the parameters of the message
+    password = userConfig["database.password"]      # password
+    msgMail['From'] = userConfig["database.user"]   # user email
+    msgMail['To'] = ', '.join(toDestiny)            # to who is email
+    msgMail['Subject'] = subject                    # subject
 
-	# for more destination
-	for i in range(0, len(destin)):
-		destin[i] = destin[i].strip()
-		chain = chain+destin[i]
-		if i+1 < len(destin):
-			chain = chain+','
 
-	msg['To'] = chain
-
-	print(msg['To'])
-
-	msg['Subject'] = input("\nInsert subject: ")
+    # add in the message body
+    msgMail.attach(MIMEText(body, 'plain'))
  
-	message = input("\nInsert message: ")
 
-	# add in the message body
-	msg.attach(MIMEText(message, 'plain'))
- 
-	file_name = input("\nInsert file name (leave blank if you will not attach): ")
+### Section to Attach ####
 
-	# attach file
-	if file_name != "":
-		file_address = input("\nInsert file address: ")
-		file = open(file_address, 'rb')
-		file_MIME = MIMEBase('application', 'octet-stream')
-		file_MIME.set_payload((file).read())
-		encoders.encode_base64(file_MIME)
-		file_MIME.add_header('Content-Disposition', "attachment; filename= %s" % file_name)
-		msg.attach(file_MIME)
- 
-	# create server
-	server = smtplib.SMTP('smtp.gmail.com: 587')
- 	
- 	# encrypt the connection
-	server.starttls()
- 
-	# Login Credentials for sending the mail
-	server.login(msg['From'], password)
- 
-	# send the message via the server.
-	server.sendmail(msg['From'], msg['To'], msg.as_string())
- 
-	server.quit()
- 
-	print ("\nsuccessfully sent email to %s" % (msg['To']))
+    if filesToSend != "":
+       
+        for file_name in filesToSend:
+
+            with open(file_name,"rb") as file_attach:
+                # Add file as application/octet-stream
+                file_MIME = MIMEBase("application", "octet-stream")
+                file_MIME.set_payload(file_attach.read())
+
+            # Encode file in ASCII characters to send by email    
+            encoders.encode_base64(file_MIME)
+
+            # Add header as key/value pair to attachment part
+            file_MIME.add_header("Content-Disposition", f"attachment; filename= {file_name}",)
+
+            # Add attachment to message and convert message to string
+            msgMail.attach(file_MIME)
 
 
+
+
+
+
+#### Section to login and send the email #######
+    # create server
+    server = smtplib.SMTP('smtp.gmail.com: 587')
+    
+    # encrypt the connection
+    server.starttls()
+ 
+    # Login Credentials for sending the mail
+    server.login(msgMail['From'], password)
+ 
+    # send the message via the server.
+    server.sendmail(msgMail['From'], msgMail['To'].split(", "), msgMail.as_string())
+ 
+    # Close Conection
+    server.quit()
+
+    print ("\nsuccessfully sent email to %s" % (msgMail['To']))
+
+    del msgMail
+
+####################################  sendMessage ####################################################
+
+
+
+
+
+############################################
  # load userConfig
 def loadConfig(file):
 
@@ -103,11 +116,22 @@ def loadConfig(file):
             userConfig[name + "." + str.lower(opt)] = str.strip(
                 cp.get(sec, opt))
     return userConfig
+############## loadCondif#######################
 
 
+
+
+
+
+
+
+
+
+################################################
+# This function checks for unseen emails
 def analizerMail():
 
-    loadConfig("config.ini")
+    
     # get user from userConfig
     user = userConfig["database.user"]
     # get password from userConfig
@@ -202,27 +226,15 @@ def analizerMail():
     finally:        
 
         imapMail.logout()
+###################################### analizerEmail #################################################
+
+
 
 
 #####################################################   MAIN  #############################################
 
-
-sendMessage()
-
-exit()
-
-try:
+if __name__ == "__main__":
     
-    threadFunction = threading.Thread(target=analizerMail)
-
-    threadFunction.setDaemon(True)
-
-    threadFunction.start()
-
-    threadFunction.join()
-
-except:
-    run = False
-    print("\nProgram stopped")
-    exit()
+    # get user config
+    loadConfig("config.ini")
 
