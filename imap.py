@@ -21,6 +21,7 @@ userConfig = {
     "database.password": ""}
 
 run = True #stop the daemon in False
+semaphore = threading.Semaphore(1)
 
 
 
@@ -28,6 +29,8 @@ run = True #stop the daemon in False
 ###########################
  # send message function
 def sendMessage():
+
+    semaphore.acquire()
 
     toDestiny = input ("Enter TO (separate with ',' if more than one destinatary): ").split(",")
     subject = input ("Enter a Subject: ")
@@ -96,6 +99,7 @@ def sendMessage():
 
     del msgMail
 
+    semaphore.release()
 ####################################  sendMessage ####################################################
 
 
@@ -167,6 +171,9 @@ def analizerMail():
         #Idle Loop
         while run:
 
+            # Locks if user is sending an email
+            semaphore.acquire()
+
             # makes a list of email
             imapMail.list()
 
@@ -195,6 +202,8 @@ def analizerMail():
                     allowedToShow = True
                     #print("Except, item wasnt showed")
 
+
+                # If it has something to show
                 if allowedToShow:
                     (resp, data) = imapMail.uid('fetch',emailid, "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
         
@@ -221,7 +230,10 @@ def analizerMail():
                 listOfShowedEmailsID.extend(listOfEmailsID)
                 listOfEmailsID.clear()
 
-            time.sleep(2)
+
+            # Release the lock 
+            semaphore.release()
+            time.sleep(5)
 
     finally:        
 
@@ -238,3 +250,10 @@ if __name__ == "__main__":
     # get user config
     loadConfig("config.ini")
 
+    thread1 = threading.Thread (target = analizerMail)
+    thread1.start()
+
+    while True:
+        if (input().lower() == "send")
+            thread2 = threading.Thread(target = sendMessage)
+            thread2.start()
