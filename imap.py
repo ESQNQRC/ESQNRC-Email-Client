@@ -1,4 +1,4 @@
-import email, getpass, imaplib, os, time, threading, configparser, string, smtplib
+import email, getpass, imaplib, os, time, threading, configparser, string, smtplib,re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -38,7 +38,8 @@ def sendMessage():
     subject = input ("Enter a Subject: ")
     body = input ("Enter a body message: ")
     filesToSend = input ("Enter path of files to attach if any (separete with ',' leave in blank if no files to attach): ").split(",")
-
+    urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
+    urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
     # create message object instance
     msgMail = MIMEMultipart()
@@ -257,18 +258,28 @@ if __name__ == "__main__":
     # get user config
     loadConfig("config.ini")
 
+    if (userConfig["database.user"] == "" or userConfig["database.password"] == ""):
+        print("user or password empty")
+        exit()
+
     print("Write 'send' to send an email ")
+    print("Write 'exit' to close program")
 
     # Starts notifications
     thread1 = threading.Thread(target = analizerMail)
+    thread1.setDaemon(True)
     thread1.start()
 
 
+
     while True:
-        if (input().lower() == "send"):
+        imput = input().lower()
+        if (imput == "send"):
             thread2 = threading.Thread(target = sendMessage)
             thread2.start()
             thread2.join()
+        elif (imput == "exit"):
+            exit(0)
 
 
 
