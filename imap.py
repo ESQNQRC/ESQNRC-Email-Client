@@ -1,4 +1,4 @@
-import email, getpass, imaplib, os, time, threading, configparser, string, smtplib
+import email, getpass, imaplib, os, time, threading, configparser, string, smtplib,re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -21,75 +21,96 @@ userConfig = {
     "database.password": ""}
 
 run = True #stop the daemon in False
+sendMessageOn = False
+#semaphore = threading.Semaphore(1)
 
+
+
+
+#################################
  # send message function
 def sendMessage():
-	# create message object instance
-	msg = MIMEMultipart()
 
-	# get user config
-	loadConfig("config.ini")
+    # semaphore.acquire()
+    sendMessageOn = True
 
-	# setup the parameters of the message
-	password = userConfig["database.password"]
-	msg['From'] = userConfig["database.user"]
+    toDestiny = input ("Enter TO (separate with ',' if more than one destinatary): ").split(",")
+    subject = input ("Enter a Subject: ")
+    body = input ("Enter a body message: ")
+    filesToSend = input ("Enter path of files to attach if any (separete with ',' leave in blank if no files to attach): ").split(",")
+    urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
+    urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
-	if (msg['From'] == "" or password == ""):
-		print("user or password empty")
-		exit()
+    # create message object instance
+    msgMail = MIMEMultipart()
 
-	# destination
-	destin = input("\nInsert destination (use ',' to separate more destinations): ").split(',')
+### Section to set up the data ###
 
-	chain = ""
+    # setup the parameters of the message
+    password = userConfig["database.password"]      # password
+    msgMail['From'] = userConfig["database.user"]   # user email
+    msgMail['To'] = ', '.join(toDestiny)            # to who is email
+    msgMail['Subject'] = subject                    # subject
 
-	# for more destination
-	for i in range(0, len(destin)):
-		destin[i] = destin[i].strip()
-		chain = chain+destin[i]
-		if i+1 < len(destin):
-			chain = chain+','
 
-	msg['To'] = chain
-
-	print(msg['To'])
-
-	msg['Subject'] = input("\nInsert subject: ")
+    # add in the message body
+    msgMail.attach(MIMEText(body, 'plain'))
  
-	message = input("\nInsert message: ")
 
-	# add in the message body
-	msg.attach(MIMEText(message, 'plain'))
- 
-	file_name = input("\nInsert file name (leave blank if you will not attach): ")
+### Section to Attach ####
 
-	# attach file
-	if file_name != "":
-		file_address = input("\nInsert file address: ")
-		file = open(file_address, 'rb')
-		file_MIME = MIMEBase('application', 'octet-stream')
-		file_MIME.set_payload((file).read())
-		encoders.encode_base64(file_MIME)
-		file_MIME.add_header('Content-Disposition', "attachment; filename= %s" % file_name)
-		msg.attach(file_MIME)
- 
-	# create server
-	server = smtplib.SMTP('smtp.gmail.com: 587')
- 	
- 	# encrypt the connection
-	server.starttls()
- 
-	# Login Credentials for sending the mail
-	server.login(msg['From'], password)
- 
-	# send the message via the server.
-	server.sendmail(msg['From'], msg['To'], msg.as_string())
- 
-	server.quit()
- 
-	print ("\nsuccessfully sent email to %s" % (msg['To']))
+    if filesToSend != ['']:
+       
+        for file_name in filesToSend:
+
+            with open(file_name,"rb") as file_attach:
+                # Add file as application/octet-stream
+                file_MIME = MIMEBase("application", "octet-stream")
+                file_MIME.set_payload(file_attach.read())
+
+            # Encode file in ASCII characters to send by email    
+            encoders.encode_base64(file_MIME)
+
+            # Add header as key/value pair to attachment part
+            file_MIME.add_header("Content-Disposition", f"attachment; filename= {file_name}",)
+
+            # Add attachment to message and convert message to string
+            msgMail.attach(file_MIME)
 
 
+
+
+
+
+#### Section to login and send the email #######
+    # create server
+    server = smtplib.SMTP('smtp.gmail.com: 587')
+    
+    # encrypt the connection
+    server.starttls()
+ 
+    # Login Credentials for sending the mail
+    server.login(msgMail['From'], password)
+ 
+    # send the message via the server.
+    server.sendmail(msgMail['From'], msgMail['To'].split(", "), msgMail.as_string())
+ 
+    # Close Conection
+    server.quit()
+
+    print ("\nsuccessfully sent email to %s" % (msgMail['To']))
+
+    del msgMail
+
+    sendMessageOn = False
+    # semaphore.release()
+####################################  sendMessage ####################################################
+
+
+
+
+
+############################################
  # load userConfig
 def loadConfig(file):
 
@@ -103,11 +124,22 @@ def loadConfig(file):
             userConfig[name + "." + str.lower(opt)] = str.strip(
                 cp.get(sec, opt))
     return userConfig
+############## loadCondif#######################
 
 
+
+
+
+
+
+
+
+
+################################################
+# This function checks for unseen emails
 def analizerMail():
 
-    loadConfig("config.ini")
+    
     # get user from userConfig
     user = userConfig["database.user"]
     # get password from userConfig
@@ -143,6 +175,13 @@ def analizerMail():
         #Idle Loop
         while run:
 
+            # Locks if user is sending an email
+            # semaphore.acquire()
+
+            if sendMessageOn:
+                while sendMessageOn:
+                    1
+
             # makes a list of email
             imapMail.list()
 
@@ -171,6 +210,8 @@ def analizerMail():
                     allowedToShow = True
                     #print("Except, item wasnt showed")
 
+
+                # If it has something to show
                 if allowedToShow:
                     (resp, data) = imapMail.uid('fetch',emailid, "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
         
@@ -197,32 +238,49 @@ def analizerMail():
                 listOfShowedEmailsID.extend(listOfEmailsID)
                 listOfEmailsID.clear()
 
-            time.sleep(2)
+
+            # Release the lock 
+            # semaphore.release()
+            time.sleep(5)
 
     finally:        
 
         imapMail.logout()
+###################################### analizerEmail #################################################
+
+
 
 
 #####################################################   MAIN  #############################################
 
-
-sendMessage()
-
-exit()
-
-try:
+if __name__ == "__main__":
     
-    threadFunction = threading.Thread(target=analizerMail)
+    # get user config
+    loadConfig("config.ini")
 
-    threadFunction.setDaemon(True)
+    if (userConfig["database.user"] == "" or userConfig["database.password"] == ""):
+        print("user or password empty")
+        exit()
 
-    threadFunction.start()
+    print("Write 'send' to send an email ")
+    print("Write 'exit' to close program")
 
-    threadFunction.join()
+    # Starts notifications
+    thread1 = threading.Thread(target = analizerMail)
+    thread1.setDaemon(True)
+    thread1.start()
 
-except:
-    run = False
-    print("\nProgram stopped")
-    exit()
+
+
+    while True:
+        imput = input().lower()
+        if (imput == "send"):
+            thread2 = threading.Thread(target = sendMessage)
+            thread2.start()
+            thread2.join()
+        elif (imput == "exit"):
+            exit(0)
+
+
+
 
