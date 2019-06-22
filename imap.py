@@ -21,16 +21,18 @@ userConfig = {
     "database.password": ""}
 
 run = True #stop the daemon in False
-semaphore = threading.Semaphore(1)
+sendMessageOn = False
+#semaphore = threading.Semaphore(1)
 
 
 
 
-###########################
+#################################
  # send message function
 def sendMessage():
 
-    semaphore.acquire()
+    # semaphore.acquire()
+    sendMessageOn = True
 
     toDestiny = input ("Enter TO (separate with ',' if more than one destinatary): ").split(",")
     subject = input ("Enter a Subject: ")
@@ -56,7 +58,7 @@ def sendMessage():
 
 ### Section to Attach ####
 
-    if filesToSend != "":
+    if filesToSend != ['']:
        
         for file_name in filesToSend:
 
@@ -99,7 +101,8 @@ def sendMessage():
 
     del msgMail
 
-    semaphore.release()
+    sendMessageOn = False
+    # semaphore.release()
 ####################################  sendMessage ####################################################
 
 
@@ -172,7 +175,11 @@ def analizerMail():
         while run:
 
             # Locks if user is sending an email
-            semaphore.acquire()
+            # semaphore.acquire()
+
+            if sendMessageOn:
+                while sendMessageOn:
+                    1
 
             # makes a list of email
             imapMail.list()
@@ -232,7 +239,7 @@ def analizerMail():
 
 
             # Release the lock 
-            semaphore.release()
+            # semaphore.release()
             time.sleep(5)
 
     finally:        
@@ -250,10 +257,19 @@ if __name__ == "__main__":
     # get user config
     loadConfig("config.ini")
 
-    thread1 = threading.Thread (target = analizerMail)
+    print("Write 'send' to send an email ")
+
+    # Starts notifications
+    thread1 = threading.Thread(target = analizerMail)
     thread1.start()
 
+
     while True:
-        if (input().lower() == "send")
+        if (input().lower() == "send"):
             thread2 = threading.Thread(target = sendMessage)
             thread2.start()
+            thread2.join()
+
+
+
+

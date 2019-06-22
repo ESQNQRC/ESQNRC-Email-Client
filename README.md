@@ -13,6 +13,11 @@ Client Features:
 
 
 
+If you have problems running the script:
+Enter this command in your terminal pip install dxlurlvoidservice
+
+
+
 Information Extracted from: 
 
 Notifications feature:
@@ -29,6 +34,10 @@ https://docs.python.org/2/library/email.mime.html
 https://code.tutsplus.com/es/tutorials/sending-emails-in-python-with-smtp--cms-29975 
 https://docs.python.org/3/library/email.examples.html
 https://www.freecodecamp.org/news/send-emails-using-code-4fcea9df63f/
+
+Regular Expressions:
+https://docs.python.org/3/library/re.html
+https://www.geeksforgeeks.org/regular-expression-python-examples-set-1/
 
 Threads, Daemon process:
 http://web.archive.org/web/20131017130434/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
