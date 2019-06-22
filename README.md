@@ -7,8 +7,23 @@ Client Features:
 2) You can send Emails to:
 - One destinatary or Multiple
 - You can attach a file or Multiple
-(Being develop)
+
 3) Clients verifies if there's and URL suspicious 
+
+
+
+
+Compile with: python3 imap.py
+
+Commands:
+ send: to send a email
+ exit: close process
+
+
+Note:
+	Its recommended to wait at least 2 or 3 secons after process has initiates, this is because the thread that shows you
+	unseen emails displays unseen emails at the beginning this is because there's nothing stopping his execution.
+	And when send is typed its when unseen threads stops until you finish sending the email
 
 
 
@@ -32,6 +47,9 @@ https://www.freecodecamp.org/news/send-emails-using-code-4fcea9df63f/
 Regular Expressions:
 https://docs.python.org/3/library/re.html
 https://www.geeksforgeeks.org/regular-expression-python-examples-set-1/
+
+URLS:
+https://www.adampalmer.me/iodigitalsec/2014/11/22/dns-black-list-rbl-checking-in-python/
 
 Threads, Daemon process:
 http://web.archive.org/web/20131017130434/http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/

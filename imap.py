@@ -1,4 +1,4 @@
-import email, getpass, imaplib, os, time, threading, configparser, string, smtplib,re
+import email, getpass, imaplib, os, time, threading, configparser, string, smtplib,re,socket,dns.resolver
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -24,6 +24,51 @@ run = True #stop the daemon in False
 sendMessageOn = False
 #semaphore = threading.Semaphore(1)
 
+bls = ["zen.spamhaus.org", "dnsbl.inps.de"] # Use only bls because time problems
+#bls2= ["zen.spamhaus.org", "dnsbl.inps.de", "dnsbl.sorbs.net", "xbl.spamhaus.org", "pbl.spamhaus.org", "dnsbl-1.uceprotect.net"]
+
+
+
+#########################################################
+def seeIfBad(urlsList):
+
+    allUrlsGood = True
+    for urxl in urlsList:  
+    
+        rlToGetIp = re.findall('((?:[-\w.]|(?:%[\da-fA-F]{2}))+)',urxl)
+        domainIP = socket.gethostbyname(rlToGetIp[1])
+        #print(domainIP)
+
+        for bl in bls:
+            try:
+                my_resolver = dns.resolver.Resolver()
+                query = '.'.join(reversed(str(domainIP).split("."))) + "." + bl
+                my_resolver.timeout = 5
+                my_resolver.lifetime = 5
+                answers = my_resolver.query(query, "A")
+                answer_txt = my_resolver.query(query, "TXT")
+                
+                #print ('IP: %s IS listed in %s (%s: %s)' %(domainIP, bl, answers[0], answer_txt[0]))
+                return False # Cannot send email at least one url its bad
+
+            except dns.resolver.NXDOMAIN: 
+                #print ('IP: %s is NOT listed in %s' %(domainIP, bl))
+                allUrlsGood = True
+            
+            # Need to handle this exceptions
+            #except dns.resolver.Timeout:
+                #print ('WARNING: Timeout querying ' + bl)
+            #except dns.resolver.NoNameservers:
+                #print ('WARNING: No nameservers for ' + bl)
+            #except dns.resolver.NoAnswer:
+                #print ('WARNING: No answer for ' + bl)
+    return allUrlsGood
+
+#########################################################
+
+
+
+
 
 
 
@@ -41,8 +86,25 @@ def sendMessage():
     urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
     urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
+    #print(urlsSubject)
+    #print(urlsBody)
+    
+    # Check for bad urls
+    if urlsSubject != []:
+        if not(seeIfBad(urlsSubject)):
+            print("Unsecure url detected")
+            return
+    if urlsBody != []:
+        if not(seeIfBad(urlsBody)):
+            print("Unsecure url detected")
+            return
+
+
+    
     # create message object instance
     msgMail = MIMEMultipart()
+
+
 
 ### Section to set up the data ###
 
@@ -76,8 +138,6 @@ def sendMessage():
 
             # Add attachment to message and convert message to string
             msgMail.attach(file_MIME)
-
-
 
 
 
