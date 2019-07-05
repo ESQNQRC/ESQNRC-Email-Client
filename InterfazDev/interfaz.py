@@ -17,6 +17,8 @@ from email import encoders
 # Send Emails                                                                                                          #
 ########################################################################################################################
 
+
+
 userConfig = {
     "database.user": "",
     "database.password": ""}
@@ -35,7 +37,6 @@ def seeIfBad(urlsList):
     
         rlToGetIp = re.findall('((?:[-\w.]|(?:%[\da-fA-F]{2}))+)',urxl)
         domainIP = socket.gethostbyname(rlToGetIp[1])
-        #print(domainIP)
 
         for bl in bls:
             try:
@@ -46,20 +47,12 @@ def seeIfBad(urlsList):
                 answers = my_resolver.query(query, "A")
                 answer_txt = my_resolver.query(query, "TXT")
                 
-                #print ('IP: %s IS listed in %s (%s: %s)' %(domainIP, bl, answers[0], answer_txt[0]))
                 return False # Cannot send email at least one url its bad
 
             except dns.resolver.NXDOMAIN: 
-                #print ('IP: %s is NOT listed in %s' %(domainIP, bl))
+                
                 allUrlsGood = True
             
-            # Need to handle this exceptions
-            #except dns.resolver.Timeout:
-                #print ('WARNING: Timeout querying ' + bl)
-            #except dns.resolver.NoNameservers:
-                #print ('WARNING: No nameservers for ' + bl)
-            #except dns.resolver.NoAnswer:
-                #print ('WARNING: No answer for ' + bl)
     return allUrlsGood
 
 #########################################################
@@ -72,18 +65,20 @@ def sendMessage(toDestino, subject, body, filesToTransfer):
 
     toDestiny = toDestino.split(",")
     filesToSend = filesToTransfer.split(",")
+    for i in range(0, len(filesToSend)):
+        filesToSend[i] = filesToSend[i].strip()
     urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
     urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
     # Check for bad urls
     if urlsSubject != []:
         if not(seeIfBad(urlsSubject)):
-            print("Unsecure url detected")
-            return
+            messagebox.showerror("Error", 'Unsecure url detected')
+            return 1
     if urlsBody != []:
         if not(seeIfBad(urlsBody)):
-            print("Unsecure url detected")
-            return
+            messagebox.showerror("Error", 'Unsecure url detected')
+            return 1
 
     # create message object instance
     msgMail = MIMEMultipart()
@@ -101,27 +96,28 @@ def sendMessage(toDestino, subject, body, filesToTransfer):
 
 ### Section to Attach ####
 
+    try:
 
-    if filesToSend != ['']:
+        if filesToSend != ['']:
        
-        for file_name in filesToSend:
-            try:
+            for file_name in filesToSend:
+
                 with open(file_name,"rb") as file_attach:
-	                # Add file as application/octet-stream
+                    # Add file as application/octet-stream
                     file_MIME = MIMEBase("application", "octet-stream")
                     file_MIME.set_payload(file_attach.read())
 
                 # Encode file in ASCII characters to send by email    
                 encoders.encode_base64(file_MIME)
 
-        	    # Add header as key/value pair to attachment part
+                # Add header as key/value pair to attachment part
                 file_MIME.add_header("Content-Disposition", f"attachment; filename= {file_name}",)
 
-	            # Add attachment to message and convert message to string
+                # Add attachment to message and convert message to string
                 msgMail.attach(file_MIME)
-            except:
-                messagebox.showerror("Error", 'File not found')
-                return
+    except:
+        messagebox.showerror("Error", 'File not found')
+        return 1
 
 #### Section to login and send the email #######
     # create server
@@ -133,13 +129,19 @@ def sendMessage(toDestino, subject, body, filesToTransfer):
     # Login Credentials for sending the mail
     server.login(msgMail['From'], password)
  
-    # send the message via the server.
-    server.sendmail(msgMail['From'], msgMail['To'].split(", "), msgMail.as_string())
+    try:
+        # send the message via the server.
+        server.sendmail(msgMail['From'], msgMail['To'].split(", "), msgMail.as_string())
+    except:
+        messagebox.showerror("Error", 'recipient is incorrect')
+        return 1
  
     # Close Conection
     server.quit()
 
     del msgMail
+
+    return 0
 ####################################  sendMessage ####################################################
 
 
@@ -176,8 +178,6 @@ def analizerMail(user, pwd):
 
             imapMail.select('Inbox') # here you a can choose a mail box like INBOX instead
 
-            ##print("Checking inbox")
-
             (resp, data) = imapMail.uid('search',None, '(UNSEEN)') # filter unseen mails
 
             data = data[0].split() # getting the mails id
@@ -190,12 +190,10 @@ def analizerMail(user, pwd):
                 # If exception doesn't comes up then item is in the last showed emails list, so we dont show it
                     listOfShowedEmailsID.index(emailid)
                     allowedToShow = False
-                    #print("Try, item already showed")
+
                 except: 
                 # Except, so id isnt in the list, we need to show it
                     allowedToShow = True
-                    #print("Except, item wasnt showed")
-
 
                 # If it has something to show
                 if allowedToShow:
@@ -216,12 +214,12 @@ def analizerMail(user, pwd):
 
                     listOfEmailsID.append(emailid)
                     try:
-                    	resp = "["+mail["From"]+"] :" + mail["Subject"] + "\n"
-                    	text2.configure(state="normal")
-                    	text2.insert(END, resp)
-                    	text2.configure(state="disabled")
+                        resp = "["+mail["From"]+"] :" + mail["Subject"] + "\n"
+                        text2.configure(state="normal")
+                        text2.insert(END, resp)
+                        text2.configure(state="disabled")
                     except:
-                    	exit()
+                        exit()
 
             # If this list is not empty, then i got some new emails
             if listOfEmailsID:
@@ -235,8 +233,7 @@ def analizerMail(user, pwd):
 
 
 
-############################################
- # load userConfig
+#################### load userConfig############
 def loadConfig(file):
 
     #returns a dictionary with keys of the form
@@ -254,47 +251,48 @@ def loadConfig(file):
 
 
 def newEmail():
-	windowEmail = Tk()
-	windowEmail.title("New Email")
-	windowEmail.geometry("500x420+450+200")
-	toUser = Label(windowEmail, text="To " , font=("Century Gothic", 10), padx=7, pady=7)
-	toUser.grid(column=0, row=0)
+    windowEmail = Tk()
+    windowEmail.title("New Email")
+    windowEmail.geometry("500x420+450+200")
+    toUser = Label(windowEmail, text="To " , font=("Century Gothic", 10), padx=7, pady=7)
+    toUser.grid(column=0, row=0)
 
-	enterUser = Entry(windowEmail,width=50)
-	enterUser.grid(column=1, row=0)
-	subject =Label(windowEmail, text="Subject: " , font=("Century Gothic", 10), padx=5, pady=7)
-	subject.grid(column=0, row=1)
-	enterSubject = Entry(windowEmail,width=50)
-	enterSubject.grid(column=1, row=1)
-	content = scrolledtext.ScrolledText(windowEmail,width=50,height=15)
-	content.place(x=50, y=100)
+    enterUser = Entry(windowEmail,width=50)
+    enterUser.grid(column=1, row=0)
+    subject =Label(windowEmail, text="Subject: " , font=("Century Gothic", 10), padx=5, pady=7)
+    subject.grid(column=0, row=1)
+    enterSubject = Entry(windowEmail,width=50)
+    enterSubject.grid(column=1, row=1)
+    content = scrolledtext.ScrolledText(windowEmail,width=50,height=15)
+    content.place(x=50, y=100)
 
 
-	toAtt = Label(windowEmail, text="Name files" , font=("Century Gothic", 10), padx=7, pady=7)
-	toAtt.grid(column=0, row=2)
-	toAttach = Entry(windowEmail,width=50)
-	toAttach.grid(column=1, row=2)
+    toAtt = Label(windowEmail, text="Name files" , font=("Century Gothic", 10), padx=7, pady=7)
+    toAtt.grid(column=0, row=2)
+    toAttach = Entry(windowEmail,width=50)
+    toAttach.grid(column=1, row=2)
 
-	def sendEmail():
-		sendMessage(enterUser.get(), enterSubject.get(), content.get("0.0",END), toAttach.get())
-		
-		messagebox.showinfo('Confirmation', 'Email send!')
-		windowEmail.destroy()
+    def sendEmail():
+        if sendMessage(enterUser.get(), enterSubject.get(), content.get("0.0",END), toAttach.get()) == 0:
+            messagebox.showinfo('Confirmation', 'Email send')
+        windowEmail.destroy()
 
-	btnSendEmail = Button(windowEmail, text="Send Email", command=sendEmail, bg="red4", fg="white" , font=("Century Gothic", 10))
-	btnSendEmail.place(x=190, y=373)
+    btnSendEmail = Button(windowEmail, text="Send Email", command=sendEmail, bg="red4", fg="white" , font=("Century Gothic", 10))
+    btnSendEmail.place(x=190, y=373)
+
+
 
 def toAttach():
-	windowToAttach = Tk()
-	windowToAttach.title("To Attach")
-	windowToAttach.geometry("400x300+400+250")
+    windowToAttach = Tk()
+    windowToAttach.title("To Attach")
+    windowToAttach.geometry("400x300+400+250")
 
 
 
 def Exit():
-	window.destroy()
-	run = False
-	exit()
+    window.destroy()
+    run = False
+    exit()
 
 
 
@@ -344,15 +342,17 @@ btnExit.place(x=50, y=230)
 
 # If no user or pass provided
 if (user == "" or pwd == ""):
-	messagebox.showinfo("Error", 'User or password empty')
-	window.destroy()
+    messagebox.showinfo("Error", 'User or password empty')
+    window.destroy()
+    exit()
+
 
 try:
 
-	th = threading.Thread(target = analizerMail, args=(user, pwd,))
-	th.start()
-	window.mainloop()
+    th = threading.Thread(target = analizerMail, args=(user, pwd,))
+    th.start()
+    window.mainloop()
 
 except: 
-	run = False
-	exit()
+    run = False
+    exit()
