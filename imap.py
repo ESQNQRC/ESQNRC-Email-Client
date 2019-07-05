@@ -83,6 +83,8 @@ def sendMessage():
     subject = input ("Enter a Subject: ")
     body = input ("Enter a body message: ")
     filesToSend = input ("Enter path of files to attach if any (separete with ',' leave in blank if no files to attach): ").split(",")
+    for i in range(0, len(filesToSend)):
+        filesToSend[i] = filesToSend[i].strip()
     urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
     urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
@@ -121,23 +123,30 @@ def sendMessage():
 
 ### Section to Attach ####
 
-    if filesToSend != ['']:
+    try:
+
+        if filesToSend != ['']:
        
-        for file_name in filesToSend:
+            for file_name in filesToSend:
 
-            with open(file_name,"rb") as file_attach:
-                # Add file as application/octet-stream
-                file_MIME = MIMEBase("application", "octet-stream")
-                file_MIME.set_payload(file_attach.read())
+                with open(file_name,"rb") as file_attach:
+                    # Add file as application/octet-stream
+                    file_MIME = MIMEBase("application", "octet-stream")
+                    file_MIME.set_payload(file_attach.read())
 
-            # Encode file in ASCII characters to send by email    
-            encoders.encode_base64(file_MIME)
+                # Encode file in ASCII characters to send by email    
+                encoders.encode_base64(file_MIME)
 
-            # Add header as key/value pair to attachment part
-            file_MIME.add_header("Content-Disposition", f"attachment; filename= {file_name}",)
+                # Add header as key/value pair to attachment part
+                file_MIME.add_header("Content-Disposition", f"attachment; filename= {file_name}",)
 
-            # Add attachment to message and convert message to string
-            msgMail.attach(file_MIME)
+                # Add attachment to message and convert message to string
+                msgMail.attach(file_MIME)
+    except:
+        print("Error when opening the file\nEmail canceled\n")
+
+        print("Write 'send' to send an email\nWrite 'exit' to close program\n ")
+        return
 
 
 
@@ -159,6 +168,8 @@ def sendMessage():
     server.quit()
 
     print ("\nsuccessfully sent email to %s" % (msgMail['To']))
+
+    print("\nWrite 'send' to send an email\nWrite 'exit' to close program\n ")
 
     del msgMail
 
@@ -220,6 +231,7 @@ def analizerMail():
         imapMail.login(user,pwd)
     except:
         print("user or password incorrect")
+
         exit()
 
     global run
@@ -322,8 +334,7 @@ if __name__ == "__main__":
         print("user or password empty")
         exit()
 
-    print("Write 'send' to send an email ")
-    print("Write 'exit' to close program")
+    print("Write 'send' to send an email\nWrite 'exit' to close program\n ")
 
     # Starts notifications
     thread1 = threading.Thread(target = analizerMail)
