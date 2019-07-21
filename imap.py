@@ -219,7 +219,7 @@ def analizerMail(user, pwd, chat_id, bot, last_update_id):  # This function chec
 
 
 def main():
-    bot = TelegramBot(token)
+    bot = TelegramBot(token) #Connect with the bot
     bot.update_bot_info().wait()
     print("botUsername: ", bot.username)
 
@@ -270,13 +270,13 @@ def main():
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
-    def layer8(bot, last_update_id, usr, pwd, dest, sub, content): 
+    def layer8(bot, last_update_id, usr, pwd, dest, sub, content): # Send mail with or without files
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id):
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer8(bot, update, last_update_id, usr, pwd, dest, sub, content)
@@ -317,13 +317,13 @@ def main():
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
-    def layer7(bot, last_update_id, usr, pwd, dest, sub): 
+    def layer7(bot, last_update_id, usr, pwd, dest, sub): # Content
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id): 
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer7(bot, update, last_update_id, usr, pwd, dest, sub)
@@ -364,13 +364,13 @@ def main():
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
-    def layer6(bot, last_update_id, usr, pwd, dest): 
+    def layer6(bot, last_update_id, usr, pwd, dest): #Subject
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id):
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer6(bot, update, last_update_id, usr, pwd, dest)
@@ -411,13 +411,13 @@ def main():
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
-    def layer5(bot, last_update_id, usr, pwd): 
+    def layer5(bot, last_update_id, usr, pwd): #Insert mail address
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id): 
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer5(bot, update, last_update_id, usr, pwd)
@@ -475,13 +475,13 @@ def main():
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
 
-    def layer4(bot, last_update_id, usr, pwd): 
+    def layer4(bot, last_update_id, usr, pwd): #Show emails, send email and back
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id): 
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer4(bot, update, last_update_id, usr, pwd)
@@ -552,13 +552,13 @@ def main():
             bot.send_message(u.message.chat.id, 'Incorrect user or password', reply_markup=reply_markup).wait()                     
             layer2(bot, last_update_id)
 
-    def layer3(bot, last_update_id): 
+    def layer3(bot, last_update_id): # Loggin
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates:
+                    if int(update.update_id) > int(last_update_id): 
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer3(bot, update, last_update_id)
@@ -604,13 +604,13 @@ def main():
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
 
-    def layer2(bot, last_update_id): 
+    def layer2(bot, last_update_id): # Loggin or loggout
 
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try:    
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id): 
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
                         process_message_layer2(bot, update, last_update_id)
@@ -623,25 +623,25 @@ def main():
 
     def process_message_layer1(bot, u, last_update_id): 
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
             user = u.message.sender.username
             message = u.message.text 
             print("chat_id: ", chat_id)
             print("message: ", message)
 
-            if message == 'Start LambderBot':
-                keyboard = [['Loggin account'],['Exit']]
-                reply_markup = ReplyKeyboardMarkup.create(keyboard)
-                bot.send_message(chat_id, 'Buenas\nSelect an option', reply_markup=reply_markup).wait()
+            if message == 'Start LambderBot': # if message is ...
+                keyboard = [['Loggin account'],['Exit']] # Buttons Loggin account and Exit
+                reply_markup = ReplyKeyboardMarkup.create(keyboard) # Create Button
+                bot.send_message(chat_id, 'Buenas\nSelect an option', reply_markup=reply_markup).wait() # Show message and Button
                 print('Buenas, Select an option')
-                layer2(bot, last_update_id)
+                layer2(bot, last_update_id) # Call Second Layer
 
-            elif message == '/start':
+            elif message == '/start': 
                 print("Select an option")
                 keyboard = [['Start LambderBot']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
-                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait() # update buttons and stay in this layer
 
             else: 
                 print("Select an option")
@@ -657,14 +657,14 @@ def main():
 
     def layer1(bot, last_update_id): #Welcome layer
 
-        while True: 
+        while True: # While for message from this layer, because the user can insert bad text
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
-                for update in updates: #obtenemos los datos del mensaje
-                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                for update in updates: #get message data
+                    if int(update.update_id) > int(last_update_id): #if the message is new, process
                         last_update_id = update.update_id 
                         print("last_update_id: ",last_update_id)
-                        process_message_layer1(bot, update, last_update_id)
+                        process_message_layer1(bot, update, last_update_id) # call process message
                         continue 
                 continue 
             except Exception: 
@@ -672,7 +672,7 @@ def main():
                 print(traceback.format_exc())
                 continue
 
-    layer1(bot, last_update_id)
+    layer1(bot, last_update_id) # Start first layer
 
 
 if __name__ == '__main__':
