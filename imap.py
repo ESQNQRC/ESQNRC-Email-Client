@@ -1,9 +1,9 @@
-import email, getpass, imaplib, os, time, threading, configparser, string, smtplib,re,socket,dns.resolver
+from twx.botapi import TelegramBot, ReplyKeyboardMarkup
+import email, getpass, imaplib, os, time, threading, configparser, string, smtplib, sys, re,socket, dns.resolver, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-
 
 ########################################################################################################################
 #               Team: Lambder                                                                                          #
@@ -15,21 +15,12 @@ from email import encoders
 # Send Emails                                                                                                          #
 ########################################################################################################################
 
- # user data
-userConfig = {
-    "database.user": "",
-    "database.password": ""}
-
 run = True #stop the daemon in False
-sendMessageOn = False
-#semaphore = threading.Semaphore(1)
 
 bls = ["zen.spamhaus.org", "dnsbl.inps.de"] # Use only bls because time problems
-#bls2= ["zen.spamhaus.org", "dnsbl.inps.de", "dnsbl.sorbs.net", "xbl.spamhaus.org", "pbl.spamhaus.org", "dnsbl-1.uceprotect.net"]
 
+token = ''
 
-
-#########################################################
 def seeIfBad(urlsList):
 
     allUrlsGood = True
@@ -37,7 +28,6 @@ def seeIfBad(urlsList):
     
         rlToGetIp = re.findall('((?:[-\w.]|(?:%[\da-fA-F]{2}))+)',urxl)
         domainIP = socket.gethostbyname(rlToGetIp[1])
-        #print(domainIP)
 
         for bl in bls:
             try:
@@ -48,78 +38,48 @@ def seeIfBad(urlsList):
                 answers = my_resolver.query(query, "A")
                 answer_txt = my_resolver.query(query, "TXT")
                 
-                #print ('IP: %s IS listed in %s (%s: %s)' %(domainIP, bl, answers[0], answer_txt[0]))
                 return False # Cannot send email at least one url its bad
 
             except dns.resolver.NXDOMAIN: 
-                #print ('IP: %s is NOT listed in %s' %(domainIP, bl))
+                
                 allUrlsGood = True
             
-            # Need to handle this exceptions
-            #except dns.resolver.Timeout:
-                #print ('WARNING: Timeout querying ' + bl)
-            #except dns.resolver.NoNameservers:
-                #print ('WARNING: No nameservers for ' + bl)
-            #except dns.resolver.NoAnswer:
-                #print ('WARNING: No answer for ' + bl)
     return allUrlsGood
 
-#########################################################
 
 
+def sendMessage(toDestino, subject, body, filesToTransfer, usr, pwd, chat_id):
 
-
-
-
-
-#################################
- # send message function
-def sendMessage():
-
-    # semaphore.acquire()
-    sendMessageOn = True
-
-    toDestiny = input ("Enter TO (separate with ',' if more than one destinatary): ").split(",")
-    subject = input ("Enter a Subject: ")
-    body = input ("Enter a body message: ")
-    filesToSend = input ("Enter path of files to attach if any (separete with ',' leave in blank if no files to attach): ").split(",")
+    toDestiny = toDestino.split(",")
+    filesToSend = filesToTransfer.split(",")
     for i in range(0, len(filesToSend)):
         filesToSend[i] = filesToSend[i].strip()
     urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
     urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
-    #print(urlsSubject)
-    #print(urlsBody)
-    
     # Check for bad urls
     if urlsSubject != []:
         if not(seeIfBad(urlsSubject)):
-            print("Unsecure url detected")
-            return
+            bot.send_message(chat_id, 'Unsecure url detected')
+            return 1
     if urlsBody != []:
         if not(seeIfBad(urlsBody)):
-            print("Unsecure url detected")
-            return
+            bot.send_message(chat_id, 'Unsecure url detected')
+            return 1
 
-
-    
     # create message object instance
     msgMail = MIMEMultipart()
-
-
 
 ### Section to set up the data ###
 
     # setup the parameters of the message
-    password = userConfig["database.password"]      # password
-    msgMail['From'] = userConfig["database.user"]   # user email
+    password = pwd      # password
+    msgMail['From'] = usr   # user email
     msgMail['To'] = ', '.join(toDestiny)            # to who is email
     msgMail['Subject'] = subject                    # subject
 
-
     # add in the message body
-    msgMail.attach(MIMEText(body, 'plain'))
- 
+    msgMail.attach(MIMEText(body, 'plain')) 
 
 ### Section to Attach ####
 
@@ -143,13 +103,8 @@ def sendMessage():
                 # Add attachment to message and convert message to string
                 msgMail.attach(file_MIME)
     except:
-        print("Error when opening the file\nEmail canceled\n")
-
-        print("Write 'send' to send an email\nWrite 'exit' to close program\n ")
-        return
-
-
-
+        bot.send_message(chat_id, 'File not found')
+        return 1
 
 #### Section to login and send the email #######
     # create server
@@ -161,81 +116,39 @@ def sendMessage():
     # Login Credentials for sending the mail
     server.login(msgMail['From'], password)
  
-    # send the message via the server.
-    server.sendmail(msgMail['From'], msgMail['To'].split(", "), msgMail.as_string())
+    try:
+        # send the message via the server.
+        server.sendmail(msgMail['From'], msgMail['To'].split(", "), msgMail.as_string())
+    except:
+        bot.send_message(chat_id, 'recipient is incorrect')
+        return 1
  
     # Close Conection
     server.quit()
 
-    print ("\nsuccessfully sent email to %s" % (msgMail['To']))
-
-    print("\nWrite 'send' to send an email\nWrite 'exit' to close program\n ")
-
     del msgMail
 
-    sendMessageOn = False
-    # semaphore.release()
-####################################  sendMessage ####################################################
+    return 0
 
 
 
-
-
-############################################
- # load userConfig
-def loadConfig(file):
-
-    #returns a dictionary with keys of the form
-    #<section>.<option> and the corresponding values
-    cp = configparser.ConfigParser(  )
-    cp.read(file)
-    for sec in cp.sections(  ):
-        name = str.lower(sec)
-        for opt in cp.options(sec):
-            userConfig[name + "." + str.lower(opt)] = str.strip(
-                cp.get(sec, opt))
-    return userConfig
-############## loadCondif#######################
-
-
-
-
-
-
-
-
-
-
-################################################
-# This function checks for unseen emails
-def analizerMail():
-
-    
-    # get user from userConfig
-    user = userConfig["database.user"]
-    # get password from userConfig
-    pwd = userConfig["database.password"]
-
-    # If no user or pass provided
-    if (user == "" or pwd == ""):
-        print("user or password empty")
-        exit()
-
+def analizerMail(user, pwd, chat_id, bot, last_update_id):  # This function checks for unseen emails
 
     # connecting to the gmail imap server
     imapMail = imaplib.IMAP4_SSL("imap.gmail.com")
-
 
     # Login
     try:
         imapMail.login(user,pwd)
     except:
-        print("user or password incorrect")
 
-        exit()
+        print("User or password incorrect <Sticker>")
+        keyboard = [['Loggin account'],['Exit']]
+        reply_markup = ReplyKeyboardMarkup.create(keyboard)
+        bot.send_message(chat_id, 'User or password incorrect <Sticker>', reply_markup=reply_markup).wait()
+        layer2(bot, last_update_id)
 
     global run
-    
     
     # Makes a list of mails id (to show only new unseen ones)
     listOfShowedEmailsID = []
@@ -247,41 +160,27 @@ def analizerMail():
         #Idle Loop
         while run:
 
-            # Locks if user is sending an email
-            # semaphore.acquire()
-
-            if sendMessageOn:
-                while sendMessageOn:
-                    1
-
             # makes a list of email
             imapMail.list()
 
             imapMail.select('Inbox') # here you a can choose a mail box like INBOX instead
 
-            ##print("Checking inbox")
-
             (resp, data) = imapMail.uid('search',None, '(UNSEEN)') # filter unseen mails
 
             data = data[0].split() # getting the mails id
 
-
             # Now for every unseen email
             for emailid in data:
-
-                #print(emailid)
     
                 # Check if email id is in the list of last emails shown
                 try:
                 # If exception doesn't comes up then item is in the last showed emails list, so we dont show it
                     listOfShowedEmailsID.index(emailid)
                     allowedToShow = False
-                    #print("Try, item already showed")
+
                 except: 
                 # Except, so id isnt in the list, we need to show it
                     allowedToShow = True
-                    #print("Except, item wasnt showed")
-
 
                 # If it has something to show
                 if allowedToShow:
@@ -301,57 +200,480 @@ def analizerMail():
                     # Add the current emailID to listOfEmailsID, to save new IDs
 
                     listOfEmailsID.append(emailid)
+                    try:
+                        resp = "["+mail["From"]+"] :" + mail["Subject"] + "\n"
 
-                    print ("["+mail["From"]+"] :" + mail["Subject"] + "\n")
-
+                        bot.send_message(chat_id, resp)
+                    except:
+                        exit()
 
             # If this list is not empty, then i got some new emails
             if listOfEmailsID:
                 listOfShowedEmailsID.extend(listOfEmailsID)
                 listOfEmailsID.clear()
 
-
-            # Release the lock 
-            # semaphore.release()
-            time.sleep(5)
-
     finally:        
 
         imapMail.logout()
-###################################### analizerEmail #################################################
 
 
 
+def main():
+    bot = TelegramBot(token)
+    bot.update_bot_info().wait()
+    print("botUsername: ", bot.username)
 
-#####################################################   MAIN  #############################################
+    last_update_id = 0
 
-if __name__ == "__main__":
-    
-    # get user config
-    loadConfig("config.ini")
+    def process_message_layer8(bot, u, last_update_id, usr, pwd, dest, sub, content):
 
-    if (userConfig["database.user"] == "" or userConfig["database.password"] == ""):
-        print("user or password empty")
-        exit()
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
 
-    print("Write 'send' to send an email\nWrite 'exit' to close program\n ")
+            if message == 'Back':
+                print("Select an option")
+                keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer4(bot, last_update_id, usr, pwd)
 
-    # Starts notifications
-    thread1 = threading.Thread(target = analizerMail)
-    thread1.setDaemon(True)
-    thread1.start()
+            elif message == 'Attach files':
+                print("Attachealo y envíalo")
+
+            elif message == 'Do not attach files':
+                print("Sending mail")
+                bot.send_message(chat_id, 'Sending email')
+
+                if sendMessage(dest, sub, content, "", usr, pwd, chat_id) == 0:
+                    bot.send_message(chat_id, 'Email send')
+
+                print("Select an option")
+                keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer4(bot, last_update_id, usr, pwd)
+
+            else:
+                print("Select an option")
+                keyboard = [['Attach files'], ['Do not attach files'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+
+        else:
+            print("Select an option")
+            keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+            layer4(bot, last_update_id, usr, pwd)
+
+    def layer8(bot, last_update_id, usr, pwd, dest, sub, content): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer8(bot, update, last_update_id, usr, pwd, dest, sub, content)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer7(bot, u, last_update_id, usr, pwd, dest, sub):
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Back':
+                print("Select an option")
+                keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer4(bot, last_update_id, usr, pwd)
+
+            else:
+                print("Select an option")
+                keyboard = [['Attach files'], ['Do not attach files'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer8(bot, last_update_id, usr, pwd, dest, sub, message)
+
+        else:
+            print("Select an option")
+            keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+            layer4(bot, last_update_id, usr, pwd)
+
+    def layer7(bot, last_update_id, usr, pwd, dest, sub): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer7(bot, update, last_update_id, usr, pwd, dest, sub)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer6(bot, u, last_update_id, usr, pwd, dest):
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Back':
+                print("Select an option")
+                keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer4(bot, last_update_id, usr, pwd)
+
+            else:
+                print("Send me the content")
+                keyboard = [['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Send me the content', reply_markup=reply_markup).wait()
+                layer7(bot, last_update_id, usr, pwd, dest, message)
+
+        else:
+            print("Select an option")
+            keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+            layer4(bot, last_update_id, usr, pwd)
+
+    def layer6(bot, last_update_id, usr, pwd, dest): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer6(bot, update, last_update_id, usr, pwd, dest)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer5(bot, u, last_update_id, usr, pwd):
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Back':
+                print("Select an option")
+                keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer4(bot, last_update_id, usr, pwd)
+
+            else:
+                print("Send me the subject")
+                keyboard = [['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Send me the subject', reply_markup=reply_markup).wait()
+                layer6(bot, last_update_id, usr, pwd, message)
+
+        else:
+            print("Select an option")
+            keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+            layer4(bot, last_update_id, usr, pwd)
+
+    def layer5(bot, last_update_id, usr, pwd): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer5(bot, update, last_update_id, usr, pwd)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer4(bot, u, last_update_id, usr, pwd):
+
+        global run
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Back':
+                run = False
+                print("Select a option")
+                keyboard = [['Loggin account'],['Exit']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select a option', reply_markup=reply_markup).wait()
+                layer2(bot, last_update_id)
+
+            elif message == 'Show unseen emails':
+                print('Showing emails')
+                bot.send_message(chat_id, 'Showing emails')
+                run = True
+
+                th = threading.Thread(target = analizerMail, args=(usr, pwd, chat_id, bot, last_update_id,))
+                th.start()
+
+            elif message == 'Send a email':
+                run = False
+                print('Send me the emails of the destinations (separate with \',\')')
+                keyboard = [['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Send me the emails of the destinations (separate with \',\')', reply_markup=reply_markup).wait()
+                layer5(bot, last_update_id, usr, pwd)
+
+            else:
+                print("Select an option")
+                keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+
+        else:
+            print("Select an option")
+            keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+
+    def layer4(bot, last_update_id, usr, pwd): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer4(bot, update, last_update_id, usr, pwd)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer3(bot, u, last_update_id):
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Back':
+                print("Select an option")
+                keyboard = [['Loggin account'],['Exit']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer2(bot, last_update_id)
+
+            else: 
+                if len(message.split()) != 2:
+                    print("Incorrect user or password")
+                    keyboard = [['Loggin account'],['Exit']]
+                    reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                    bot.send_message(chat_id, 'Incorrect user or password', reply_markup=reply_markup).wait()                     
+                    layer2(bot, last_update_id)
+
+                else:
+
+                    user = message.split()[0]
+                    pwd = message.split()[1]
+
+                    # connecting to the gmail imap server
+                    imapMail = imaplib.IMAP4_SSL("imap.gmail.com")
+
+                    # Login
+                    try:
+                        imapMail.login(user,pwd)
+                    except:
+
+                        print("User or password incorrect <Sticker>")
+                        keyboard = [['Loggin account'],['Exit']]
+                        reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                        bot.send_message(chat_id, 'User or password incorrect <Sticker>', reply_markup=reply_markup).wait()
+                        layer2(bot, last_update_id)
+
+                    print("Logging successful <Sticker>")
+                    bot.send_message(chat_id, 'Loggin successful <Sticker>').wait()
+                    imapMail.logout()
+
+                    print("Select an option")
+                    keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                    reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                    bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                    layer4(bot, last_update_id, user, pwd)
+
+        else:
+            print("Incorrect user or password")
+            keyboard = [['Loggin account'],['Exit']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Incorrect user or password', reply_markup=reply_markup).wait()                     
+            layer2(bot, last_update_id)
+
+    def layer3(bot, last_update_id): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer3(bot, update, last_update_id)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer2(bot, u, last_update_id): 
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Loggin account':
+                print("Send me your User and Password (separate with space)")
+                keyboard = [['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Send me your User and Password (separate with space)', reply_markup=reply_markup).wait()
+                layer3(bot, last_update_id)
+
+            elif message == 'Exit':
+                print("See you later")
+                keyboard = [['Start LambderBot']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'See you later', reply_markup=reply_markup).wait()
+                layer1(bot, last_update_id)
+
+            else: 
+                print("Select an option")
+                keyboard = [['Loggin account'],['Exit']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()                  
+
+        else:
+            print("Select an option")
+            keyboard = [['Loggin account'],['Exit']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+
+    def layer2(bot, last_update_id): 
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try:    
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer2(bot, update, last_update_id)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    def process_message_layer1(bot, u, last_update_id): 
+
+        if u.message.sender and u.message.text and u.message.chat: 
+            chat_id = u.message.chat.id 
+            user = u.message.sender.username
+            message = u.message.text 
+            print("chat_id: ", chat_id)
+            print("message: ", message)
+
+            if message == 'Start LambderBot':
+                keyboard = [['Loggin account'],['Exit']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Buenas\nSelect an option', reply_markup=reply_markup).wait()
+                print('Buenas, Select an option')
+                layer2(bot, last_update_id)
+
+            elif message == '/start':
+                print("Select an option")
+                keyboard = [['Start LambderBot']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+
+            else: 
+                print("Select an option")
+                keyboard = [['Start LambderBot']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()                  
+
+        else:
+            print("Select an option")
+            keyboard = [['Start LambderBot']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+
+    def layer1(bot, last_update_id): #Welcome layer
+
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: #obtenemos los datos del mensaje
+                    if int(update.update_id) > int(last_update_id): #si el mensaje que estamos recibiendo es nuevo entonces, procesarlo
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer1(bot, update, last_update_id)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+    layer1(bot, last_update_id)
 
 
-
-    while True:
-        imput = input().lower()
-        if (imput == "send"):
-            thread2 = threading.Thread(target = sendMessage)
-            thread2.start()
-            thread2.join()
-        elif (imput == "exit"):
-            exit(0)
-
-
-
-
+if __name__ == '__main__':
+    main()
