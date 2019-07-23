@@ -1,16 +1,16 @@
-#Lambder-Email-Client
-*Group Lambder conformed by: Daniel Berbesi, Cesar Salazar, Valentina Contreras and Saul Ugueto*
+# Lambder-Email-Client
+* Group Lambder conformed by: Daniel Berbesi, Cesar Salazar, Valentina Contreras and Saul Ugueto *
 
 Client Features:
 
-1)Shows you unseen emails from your inbox
+1) Shows you unseen emails from your inbox
 
-2)You can send Emails to:
+2) You can send Emails to:
 
 - One destinatary or Multiple
 - You can attach a file or Multiple
 
-3)Clients verifies if there's and URL suspicious
+3) Clients verifies if there's and URL suspicious
 
 Compile with: python3 imap.py
 
