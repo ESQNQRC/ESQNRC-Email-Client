@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+import sys,traceback
 
 ########################################################################################################################
 #               Team: Lambder                                                                                          #
@@ -19,7 +20,7 @@ run = True #stop the daemon in False
 
 bls = ["zen.spamhaus.org", "dnsbl.inps.de"] # Use only bls because time problems
 
-token = ''
+token = '885992983:AAEGo6sBA0hBfYYMFAzU7K-0SJYP-PbYf0Y'
 
 def seeIfBad(urlsList):
 
@@ -106,6 +107,7 @@ def sendMessage(toDestino, subject, body, filesToTransfer, usr, pwd, chat_id):
         bot.send_message(chat_id, 'File not found')
         return 1
 
+
 #### Section to login and send the email #######
     # create server
     server = smtplib.SMTP('smtp.gmail.com: 587')
@@ -145,7 +147,10 @@ def analizerMail(user, pwd, chat_id, bot, last_update_id):  # This function chec
         print("User or password incorrect <Sticker>")
         keyboard = [['Loggin account'],['Exit']]
         reply_markup = ReplyKeyboardMarkup.create(keyboard)
-        bot.send_message(chat_id, 'User or password incorrect <Sticker>', reply_markup=reply_markup).wait()
+                        
+        bot.send_message(chat_id, 'User or password incorrect', reply_markup=reply_markup).wait()
+        bot.send_sticker(chat_id, 'CAADAgAD8wgAAgi3GQKHdYrrN-Wt_QI', reply_markup=reply_markup).wait()
+                        
         layer2(bot, last_update_id)
 
     global run
@@ -218,6 +223,9 @@ def analizerMail(user, pwd, chat_id, bot, last_update_id):  # This function chec
 
 
 
+
+
+################################ MAIN #########################################################
 def main():
     bot = TelegramBot(token) #Connect with the bot
     bot.update_bot_info().wait()
@@ -227,12 +235,15 @@ def main():
 
     def process_message_layer8(bot, u, last_update_id, usr, pwd, dest, sub, content):
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
 
             if message == 'Back':
                 print("Select an option")
@@ -243,6 +254,8 @@ def main():
 
             elif message == 'Attach files':
                 print("Attachealo y envíalo")
+
+
 
             elif message == 'Do not attach files':
                 print("Sending mail")
@@ -289,12 +302,15 @@ def main():
 
     def process_message_layer7(bot, u, last_update_id, usr, pwd, dest, sub):
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
 
             if message == 'Back':
                 print("Select an option")
@@ -336,12 +352,15 @@ def main():
 
     def process_message_layer6(bot, u, last_update_id, usr, pwd, dest):
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
 
             if message == 'Back':
                 print("Select an option")
@@ -383,12 +402,16 @@ def main():
 
     def process_message_layer5(bot, u, last_update_id, usr, pwd):
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
+
 
             if message == 'Back':
                 print("Select an option")
@@ -432,12 +455,16 @@ def main():
 
         global run
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
+
 
             if message == 'Back':
                 run = False
@@ -494,12 +521,16 @@ def main():
 
     def process_message_layer3(bot, u, last_update_id):
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
+
 
             if message == 'Back':
                 print("Select an option")
@@ -509,17 +540,20 @@ def main():
                 layer2(bot, last_update_id)
 
             else: 
+
                 if len(message.split()) != 2:
-                    print("Incorrect user or password")
+                    print("Incorrect input")
                     keyboard = [['Loggin account'],['Exit']]
                     reply_markup = ReplyKeyboardMarkup.create(keyboard)
-                    bot.send_message(chat_id, 'Incorrect user or password', reply_markup=reply_markup).wait()                     
+                    bot.send_message(chat_id, 'Incorrect input', reply_markup=reply_markup).wait()                     
+                    bot.send_sticker(chat_id, 'CAADAgAD1wgAAgi3GQJjq91gSNeyaQI', reply_markup=reply_markup).wait()
                     layer2(bot, last_update_id)
 
                 else:
 
                     user = message.split()[0]
-                    pwd = message.split()[1]
+                    pwd  = message.split()[1]
+
 
                     # connecting to the gmail imap server
                     imapMail = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -527,16 +561,23 @@ def main():
                     # Login
                     try:
                         imapMail.login(user,pwd)
+
                     except:
 
                         print("User or password incorrect <Sticker>")
                         keyboard = [['Loggin account'],['Exit']]
                         reply_markup = ReplyKeyboardMarkup.create(keyboard)
-                        bot.send_message(chat_id, 'User or password incorrect <Sticker>', reply_markup=reply_markup).wait()
+                        
+                        bot.send_message(chat_id, 'User or password incorrect', reply_markup=reply_markup).wait()
+                        bot.send_sticker(chat_id, 'CAADAgAD8wgAAgi3GQKHdYrrN-Wt_QI', reply_markup=reply_markup).wait()
+                        
                         layer2(bot, last_update_id)
 
+
+
                     print("Logging successful <Sticker>")
-                    bot.send_message(chat_id, 'Loggin successful <Sticker>').wait()
+                    bot.send_message(chat_id, 'Loggin successful').wait()
+                    bot.send_sticker(chat_id, 'CAADAgADsggAAgi3GQITL8y1531UoQI').wait()
                     imapMail.logout()
 
                     print("Select an option")
@@ -546,10 +587,13 @@ def main():
                     layer4(bot, last_update_id, user, pwd)
 
         else:
-            print("Incorrect user or password")
+            print("Incorrect input")
             keyboard = [['Loggin account'],['Exit']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
-            bot.send_message(u.message.chat.id, 'Incorrect user or password', reply_markup=reply_markup).wait()                     
+            
+            bot.send_message(u.message.chat.id, 'Incorrect input', reply_markup=reply_markup).wait()                     
+            bot.send_sticker(chat_id, 'CAADAgAD1wgAAgi3GQJjq91gSNeyaQI', reply_markup=reply_markup).wait()
+            
             layer2(bot, last_update_id)
 
     def layer3(bot, last_update_id): # Loggin
@@ -569,14 +613,23 @@ def main():
                 print(traceback.format_exc())
                 continue
 
+
+
+
+
+
+
     def process_message_layer2(bot, u, last_update_id): 
 
-        if u.message.sender and u.message.text and u.message.chat: 
-            chat_id = u.message.chat.id 
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+        if u.message.sender and u.message.text and u.message.chat: # if the message is text
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
 
             if message == 'Loggin account':
                 print("Send me your User and Password (separate with space)")
@@ -612,7 +665,7 @@ def main():
                 for update in updates: 
                     if int(update.update_id) > int(last_update_id): 
                         last_update_id = update.update_id 
-                        print("last_update_id: ",last_update_id)
+                        print("\nlast_update_id: ",last_update_id)
                         process_message_layer2(bot, update, last_update_id)
                         continue 
                 continue 
@@ -621,20 +674,31 @@ def main():
                 print(traceback.format_exc())
                 continue
 
+
+
+
+
+
     def process_message_layer1(bot, u, last_update_id): 
 
         if u.message.sender and u.message.text and u.message.chat: # if the message is text
             chat_id = u.message.chat.id # Extract data of message
-            user = u.message.sender.username
-            message = u.message.text 
-            print("chat_id: ", chat_id)
+            user = u.message.sender.id
+            message = u.message.text
+
+            print("\n chat_id: ", chat_id)
+            print("user: ", user)
             print("message: ", message)
+            print("\n")
 
             if message == 'Start LambderBot': # if message is ...
                 keyboard = [['Loggin account'],['Exit']] # Buttons Loggin account and Exit
                 reply_markup = ReplyKeyboardMarkup.create(keyboard) # Create Button
-                bot.send_message(chat_id, 'Buenas\nSelect an option', reply_markup=reply_markup).wait() # Show message and Button
-                print('Buenas, Select an option')
+                
+                bot.send_message(chat_id, 'Hello\nSelect an option', reply_markup=reply_markup).wait() # Show message and Button
+                bot.send_sticker(chat_id, 'CAADAgAD5QgAAgi3GQLR-yMPZfVRlAI', reply_markup=reply_markup).wait()
+                
+                print('Hello, Select an option, Layer 1')
                 layer2(bot, last_update_id) # Call Second Layer
 
             elif message == '/start': 
@@ -663,7 +727,7 @@ def main():
                 for update in updates: #get message data
                     if int(update.update_id) > int(last_update_id): #if the message is new, process
                         last_update_id = update.update_id 
-                        print("last_update_id: ",last_update_id)
+                        print("\nlast_update_id: ",last_update_id)
                         process_message_layer1(bot, update, last_update_id) # call process message
                         continue 
                 continue 
