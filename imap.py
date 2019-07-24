@@ -20,7 +20,7 @@ run = True #stop the daemon in False
 
 bls = ["zen.spamhaus.org", "dnsbl.inps.de"] # Use only bls because time problems
 
-token = '885992983:AAEGo6sBA0hBfYYMFAzU7K-0SJYP-PbYf0Y'
+token = ''
 
 def seeIfBad(urlsList):
 
