@@ -21,7 +21,7 @@ run = True #stop the daemon in False
 
 bls = ["zen.spamhaus.org", "dnsbl.inps.de"] # Use only bls because time problems
 
-token = '885992983:AAEGo6sBA0hBfYYMFAzU7K-0SJYP-PbYf0Y'
+token = ''
 
 botto = Bot(token)
 
@@ -832,7 +832,21 @@ def main():
                 keyboard = [['Loggin account'],['Exit']] # Buttons Loggin account and Exit
                 reply_markup = ReplyKeyboardMarkup.create(keyboard) # Create Button
                 
-                bot.send_message(chat_id, 'Hello\nSelect an option', reply_markup=reply_markup).wait() # Show message and Button
+                # welcome according to the time
+                if int(time.strftime("%H")) >= 4 and int(time.strftime("%H")) < 12: #If the time is between 4 and 12 noon then the bot will say 'Good morning'
+                    greeting='Good Morning'
+                    print("Good Morning")
+                    
+                elif int(time.strftime("%H")) >= 12 and int(time.strftime("%H")) < 16: #If the time is between 12 noon and 6 then the bot will say 'Good Afternoon'
+                    greeting='Good Afternoon'
+                    print("Good Afternoon")
+                    
+                else:
+                    greeting='Good Nigth' #Else say 'Good Nigth'
+                    print("Good Nigth")
+                    
+
+                bot.send_message(chat_id,greeting+'\nSelect an option', reply_markup=reply_markup).wait() # Show message and Button
                 bot.send_sticker(chat_id, 'CAADAgAD5QgAAgi3GQLR-yMPZfVRlAI', reply_markup=reply_markup).wait()
                 
                 print('Hello, Select an option, Layer 1')
