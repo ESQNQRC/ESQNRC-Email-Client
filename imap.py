@@ -1,4 +1,5 @@
 from twx.botapi import TelegramBot, ReplyKeyboardMarkup
+from telegram import Bot
 import email, getpass, imaplib, os, time, threading, configparser, string, smtplib, sys, re,socket, dns.resolver, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -20,7 +21,9 @@ run = True #stop the daemon in False
 
 bls = ["zen.spamhaus.org", "dnsbl.inps.de"] # Use only bls because time problems
 
-token = ''
+token = '885992983:AAEGo6sBA0hBfYYMFAzU7K-0SJYP-PbYf0Y'
+
+botto = Bot(token)
 
 def seeIfBad(urlsList):
 
@@ -49,12 +52,10 @@ def seeIfBad(urlsList):
 
 
 
-def sendMessage(toDestino, subject, body, filesToTransfer, usr, pwd, chat_id):
-
+def sendMessage(toDestino, subject, body, filesToSend, usr, pwd, chat_id):
+    
     toDestiny = toDestino.split(",")
-    filesToSend = filesToTransfer.split(",")
-    for i in range(0, len(filesToSend)):
-        filesToSend[i] = filesToSend[i].strip()
+
     urlsSubject = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', subject)
     urlsBody = re.findall('(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)', body)
 
@@ -86,7 +87,7 @@ def sendMessage(toDestino, subject, body, filesToTransfer, usr, pwd, chat_id):
 
     try:
 
-        if filesToSend != ['']:
+        if filesToSend != []:
        
             for file_name in filesToSend:
 
@@ -104,7 +105,7 @@ def sendMessage(toDestino, subject, body, filesToTransfer, usr, pwd, chat_id):
                 # Add attachment to message and convert message to string
                 msgMail.attach(file_MIME)
     except:
-        bot.send_message(chat_id, 'File not found')
+        bot.send_message(chat_id, 'Error trying to send that file')
         return 1
 
 
@@ -131,6 +132,8 @@ def sendMessage(toDestino, subject, body, filesToTransfer, usr, pwd, chat_id):
     del msgMail
 
     return 0
+####################################  sendMessage ####################################################
+
 
 
 
@@ -233,6 +236,131 @@ def main():
 
     last_update_id = 0
 
+
+
+
+
+
+
+
+
+
+
+
+
+    def process_message_layer9(bot, u,last_update_id, usr, pwd, dest, sub, content,filesToSend):
+
+        # if the message is a file
+        if u.message.sender and u.message.chat:
+            chat_id = u.message.chat.id # Extract data of message
+            user = u.message.sender.id
+            
+            print("\n chat_id: ", chat_id)
+            print("user: \n", user)
+
+            if u.message.document:
+                print(" \n BOT.MESSAGE.DOCUMENT, Layer 9")
+                print(u.message.document)
+                print("\n")
+
+                # Get file info
+                file_Info = botto.get_file(u.message.document.file_id) 
+
+                # Download locally to manipulate later
+                file_Info.download(u.message.document.file_name)
+
+                filesToSend.append(u.message.document.file_name)
+
+
+                print("\n Layer 9: Esperando por archivo o Send")
+                keyboard = [['Send'],['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id,"Do you have another file? or do you want to send email?", reply_markup=reply_markup).wait()
+                layer9(bot, last_update_id, usr, pwd, dest, sub, content,filesToSend)
+
+            elif u.message.photo:
+                print(" \n BOT.MESSAGE.PHOTO, Layer 9")
+                print(u.message.photo)
+                print("\n")
+
+                # Get file info
+                file_Info = botto.get_file(u.message.photo[3].file_id) 
+
+                # Download locally to manipulate later
+                tofu = u.message.photo[3].file_id
+                
+                file_Info.download(tofu)
+
+                filesToSend.append(tofu)
+
+                print("\n Layer 9: Esperando por archivo o Send")
+                keyboard = [['Send'],['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id,"Do you have another file? or do you want to send email?", reply_markup=reply_markup).wait()
+                layer9(bot, last_update_id, usr, pwd, dest, sub, content,filesToSend)
+
+            elif u.message.text:
+                if u.message.text == 'Send':
+
+                    print("Sending mail, Layer 9")
+                    bot.send_message(chat_id, 'Sending email')
+
+                    if sendMessage(dest, sub, content, filesToSend, usr, pwd, chat_id) == 0:
+                        bot.send_message(chat_id, 'Email send')
+
+                    print("Select an option, Layer 9")
+                    keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                    reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                    bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                    layer4(bot, last_update_id, usr, pwd)
+
+                elif u.message.text == 'Back':
+                    print("Select an option, Layer 9")
+                    keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+                    reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                    bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                    layer4(bot, last_update_id, usr, pwd)
+                else:
+                    print("Select an option, Layer 9")
+                    keyboard = [['Send'],['Back']]
+                    reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                    bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+        else:
+            print("Select an option, Layer 9")
+            keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
+            reply_markup = ReplyKeyboardMarkup.create(keyboard)
+            bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
+            layer4(bot, last_update_id, usr, pwd)
+
+
+
+
+    def layer9(bot, last_update_id, usr, pwd, dest, sub, content,filesToSend): # Send mail with or without files
+        print("\n Layer 9\n")
+        while True: 
+            updates = bot.get_updates(offset = last_update_id).wait()
+            try: 
+                for update in updates: 
+                    if int(update.update_id) > int(last_update_id):
+                        last_update_id = update.update_id 
+                        print("last_update_id: ",last_update_id)
+                        process_message_layer9(bot, update,last_update_id, usr, pwd, dest, sub, content,filesToSend)
+                        continue 
+                continue 
+            except Exception: 
+                ex = None 
+                print(traceback.format_exc())
+                continue
+
+
+
+
+
+
+
+
+
+
     def process_message_layer8(bot, u, last_update_id, usr, pwd, dest, sub, content):
 
         if u.message.sender and u.message.text and u.message.chat: # if the message is text
@@ -246,45 +374,50 @@ def main():
             print("\n")
 
             if message == 'Back':
-                print("Select an option")
+                print("Select an option, Layer 8")
                 keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                 layer4(bot, last_update_id, usr, pwd)
 
             elif message == 'Attach files':
-                print("Attachealo y envíalo")
-
+                print("Enviame los archivos, Layer 8")
+                keyboard = [['Send'],['Back']]
+                reply_markup = ReplyKeyboardMarkup.create(keyboard)
+                bot.send_message(chat_id, 'Send me your files', reply_markup=reply_markup).wait()
+                layer9(bot, last_update_id, usr, pwd, dest, sub, content,[])
 
 
             elif message == 'Do not attach files':
-                print("Sending mail")
+                print("Sending mail, Layer 8")
                 bot.send_message(chat_id, 'Sending email')
 
-                if sendMessage(dest, sub, content, "", usr, pwd, chat_id) == 0:
+                if sendMessage(dest, sub, content, [], usr, pwd, chat_id) == 0:
                     bot.send_message(chat_id, 'Email send')
 
-                print("Select an option")
+                print("Select an option, Layer 8")
                 keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                 layer4(bot, last_update_id, usr, pwd)
 
             else:
-                print("Select an option")
+                print("Select an option, Layer 8")
                 keyboard = [['Attach files'], ['Do not attach files'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
+                layer8(bot, last_update_id, usr, pwd, dest, sub, content)
+
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 8")
             keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
     def layer8(bot, last_update_id, usr, pwd, dest, sub, content): # Send mail with or without files
-
+        print("\n Layer 8\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
@@ -300,6 +433,10 @@ def main():
                 print(traceback.format_exc())
                 continue
 
+
+
+
+
     def process_message_layer7(bot, u, last_update_id, usr, pwd, dest, sub):
 
         if u.message.sender and u.message.text and u.message.chat: # if the message is text
@@ -313,28 +450,28 @@ def main():
             print("\n")
 
             if message == 'Back':
-                print("Select an option")
+                print("Select an option, Layer 7")
                 keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                 layer4(bot, last_update_id, usr, pwd)
 
             else:
-                print("Select an option")
+                print("Select an option, Layer 7")
                 keyboard = [['Attach files'], ['Do not attach files'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                 layer8(bot, last_update_id, usr, pwd, dest, sub, message)
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 7")
             keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
     def layer7(bot, last_update_id, usr, pwd, dest, sub): # Content
-
+        print("\n Layer 7\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
@@ -363,28 +500,28 @@ def main():
             print("\n")
 
             if message == 'Back':
-                print("Select an option")
+                print("Select an option, Layer 6")
                 keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                 layer4(bot, last_update_id, usr, pwd)
 
             else:
-                print("Send me the content")
+                print("Send me the body, Layer 6")
                 keyboard = [['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
-                bot.send_message(chat_id, 'Send me the content', reply_markup=reply_markup).wait()
+                bot.send_message(chat_id, 'Send me the body', reply_markup=reply_markup).wait()
                 layer7(bot, last_update_id, usr, pwd, dest, message)
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 6")
             keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
     def layer6(bot, last_update_id, usr, pwd, dest): #Subject
-
+        print("\n Layer 6\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
@@ -414,28 +551,28 @@ def main():
 
 
             if message == 'Back':
-                print("Select an option")
+                print("Select an option, Layer 5")
                 keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                 layer4(bot, last_update_id, usr, pwd)
 
             else:
-                print("Send me the subject")
+                print("Send me the subject, Layer 5")
                 keyboard = [['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Send me the subject', reply_markup=reply_markup).wait()
                 layer6(bot, last_update_id, usr, pwd, message)
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 5")
             keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
             layer4(bot, last_update_id, usr, pwd)
 
     def layer5(bot, last_update_id, usr, pwd): #Insert mail address
-
+        print("\n Layer 5\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
@@ -468,14 +605,14 @@ def main():
 
             if message == 'Back':
                 run = False
-                print("Select a option")
+                print("Select a option, Layer 4")
                 keyboard = [['Loggin account'],['Exit']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select a option', reply_markup=reply_markup).wait()
                 layer2(bot, last_update_id)
 
             elif message == 'Show unseen emails':
-                print('Showing emails')
+                print('Showing emails, Layer 4')
                 bot.send_message(chat_id, 'Showing emails')
                 run = True
 
@@ -484,26 +621,26 @@ def main():
 
             elif message == 'Send a email':
                 run = False
-                print('Send me the emails of the destinations (separate with \',\')')
+                print('Send me the emails of the destinations (separate with \',\'), Layer 4')
                 keyboard = [['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Send me the emails of the destinations (separate with \',\')', reply_markup=reply_markup).wait()
                 layer5(bot, last_update_id, usr, pwd)
 
             else:
-                print("Select an option")
+                print("Select an option, Layer 4")
                 keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 4")
             keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
 
     def layer4(bot, last_update_id, usr, pwd): #Show emails, send email and back
-
+        print("\n Layer 4\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
@@ -533,7 +670,7 @@ def main():
 
 
             if message == 'Back':
-                print("Select an option")
+                print("Select an option, Layer 3")
                 keyboard = [['Loggin account'],['Exit']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
@@ -542,7 +679,7 @@ def main():
             else: 
 
                 if len(message.split()) != 2:
-                    print("Incorrect input")
+                    print("Incorrect input, Layer 3")
                     keyboard = [['Loggin account'],['Exit']]
                     reply_markup = ReplyKeyboardMarkup.create(keyboard)
                     bot.send_message(chat_id, 'Incorrect input', reply_markup=reply_markup).wait()                     
@@ -564,7 +701,7 @@ def main():
 
                     except:
 
-                        print("User or password incorrect <Sticker>")
+                        print("User or password incorrect <Sticker>, Layer 3")
                         keyboard = [['Loggin account'],['Exit']]
                         reply_markup = ReplyKeyboardMarkup.create(keyboard)
                         
@@ -575,19 +712,19 @@ def main():
 
 
 
-                    print("Logging successful <Sticker>")
+                    print("Logging successful <Sticker>, Layer 3")
                     bot.send_message(chat_id, 'Loggin successful').wait()
                     bot.send_sticker(chat_id, 'CAADAgADsggAAgi3GQITL8y1531UoQI').wait()
                     imapMail.logout()
 
-                    print("Select an option")
+                    print("Select an option, Layer 3")
                     keyboard = [['Show unseen emails'],['Send a email'], ['Back']]
                     reply_markup = ReplyKeyboardMarkup.create(keyboard)
                     bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()
                     layer4(bot, last_update_id, user, pwd)
 
         else:
-            print("Incorrect input")
+            print("Incorrect input, Layer 3")
             keyboard = [['Loggin account'],['Exit']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             
@@ -597,7 +734,7 @@ def main():
             layer2(bot, last_update_id)
 
     def layer3(bot, last_update_id): # Loggin
-
+        print("\n Layer 3\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
@@ -632,33 +769,33 @@ def main():
             print("\n")
 
             if message == 'Loggin account':
-                print("Send me your User and Password (separate with space)")
+                print("Send me your User and Password (separate with space), Layer 2")
                 keyboard = [['Back']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Send me your User and Password (separate with space)', reply_markup=reply_markup).wait()
                 layer3(bot, last_update_id)
 
             elif message == 'Exit':
-                print("See you later")
+                print("See you later, Layer 2")
                 keyboard = [['Start LambderBot']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'See you later', reply_markup=reply_markup).wait()
                 layer1(bot, last_update_id)
 
             else: 
-                print("Select an option")
+                print("Select an option, Layer 2")
                 keyboard = [['Loggin account'],['Exit']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()                  
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 2")
             keyboard = [['Loggin account'],['Exit']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
 
     def layer2(bot, last_update_id): # Loggin or loggout
-
+        print("\n Layer 2\n")
         while True: 
             updates = bot.get_updates(offset = last_update_id).wait()
             try:    
@@ -702,25 +839,25 @@ def main():
                 layer2(bot, last_update_id) # Call Second Layer
 
             elif message == '/start': 
-                print("Select an option")
+                print("Select an option, Layer 1")
                 keyboard = [['Start LambderBot']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait() # update buttons and stay in this layer
 
             else: 
-                print("Select an option")
+                print("Select an option, Layer 1")
                 keyboard = [['Start LambderBot']]
                 reply_markup = ReplyKeyboardMarkup.create(keyboard)
                 bot.send_message(chat_id, 'Select an option', reply_markup=reply_markup).wait()                  
 
         else:
-            print("Select an option")
+            print("Select an option, Layer 1")
             keyboard = [['Start LambderBot']]
             reply_markup = ReplyKeyboardMarkup.create(keyboard)
             bot.send_message(u.message.chat.id, 'Select an option', reply_markup=reply_markup).wait()
 
     def layer1(bot, last_update_id): #Welcome layer
-
+        print("\n Layer 1\n")
         while True: # While for message from this layer, because the user can insert bad text
             updates = bot.get_updates(offset = last_update_id).wait()
             try: 
